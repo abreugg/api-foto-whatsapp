@@ -1,0 +1,57 @@
+{
+  "title": "FotoAPI",
+  "version": "1.0.0",
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/photos",
+      "title": "Consultar foto",
+      "description": "Consulta com DDI; usa cache válido, registra cada acesso e arquiva uma nova versão na busca externa.",
+      "category": "public",
+      "auth": "postKey",
+      "body": {
+        "phone": "5511999999999"
+      },
+      "notes": "phone: string obrigatória, de 8 a 15 dígitos com DDI. Aceita +, espaços, parênteses e hífens. País não é inferido. Resultados não encontrados também usam o TTL configurado. HTTP 404 retorna error, cacheHit, savedAt e expiresAt; cacheHit=true indica que não houve nova busca externa. Cada consulta mantém seu histórico.",
+      "response": {
+        "id": "PHOTO_ID",
+        "requestId": "REQUEST_ID",
+        "phone": "5511999999999",
+        "url": "BASE_URL/api/photos/PHOTO_ID/image",
+        "sourceUrl": "https://pps.whatsapp.net/...",
+        "savedAt": "2026-10-07T12:00:00.000Z",
+        "expiresAt": "2026-10-08T12:00:00.000Z",
+        "cacheHit": false
+      },
+      "headers": {
+        "X-Api-Key": "SUA_API_KEY",
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/photos/:phone",
+      "title": "Consultar foto por GET",
+      "description": "Mesmo comportamento do POST. Não envie body.",
+      "category": "public",
+      "auth": "getKey",
+      "params": {
+        "phone": "5511999999999"
+      },
+      "response": {
+        "id": "PHOTO_ID",
+        "requestId": "REQUEST_ID",
+        "phone": "5511999999999",
+        "url": "BASE_URL/api/photos/PHOTO_ID/image",
+        "sourceUrl": "https://pps.whatsapp.net/...",
+        "savedAt": "2026-10-07T12:00:00.000Z",
+        "expiresAt": "2026-10-08T12:00:00.000Z",
+        "cacheHit": true
+      },
+      "query": {
+        "apikey": "SUA_API_KEY"
+      },
+      "notes": "Exemplo: /api/photos/5511999999999?apikey=123. Substitua 123 por uma chave de consulta ativa. Não envie body. Resultados não encontrados também usam o TTL configurado. HTTP 404 retorna error, cacheHit, savedAt e expiresAt; cacheHit=true indica que não houve nova busca externa. Cada consulta mantém seu histórico."
+    }
+  ]
+}

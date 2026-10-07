@@ -1,0 +1,29 @@
+{
+  "name": "whatsapp-photo-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "description": "API de fotos WhatsApp com histórico em MySQL e painel administrativo",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node scripts/dev.js",
+    "test": "node --test test/*.test.js",
+    "test:mysql": "node --env-file=.env --test test/mysql.integration.js",
+    "check": "node scripts/check.js",
+    "docs:generate": "node scripts/generate-integration-docs.js",
+    "diagnose:wuzapi": "node scripts/diagnose-wuzapi.js",
+    "format": "prettier --write src public test scripts package.json compose.yml README.md",
+    "format:check": "prettier --check src public test scripts package.json compose.yml README.md"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "mysql2": "^3.15.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9"
+  }
+}

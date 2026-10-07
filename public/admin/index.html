@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FotoAPI · Administração</title>
+    <link rel="stylesheet" href="/admin/styles.css" />
+    <script src="/admin/cache-duration.js" defer></script>
+    <script src="/admin/app.js" defer></script>
+  </head>
+  <body>
+    <section id="login-screen" class="login-screen">
+      <div class="login-card">
+        <div class="brand"><span class="logo">f.</span> FotoAPI</div>
+        <p class="eyebrow">ADMINISTRAÇÃO</p>
+        <h1>Seu acervo,<br />sempre conectado.</h1>
+        <p class="muted">Gerencie consultas, fotos e conexões do WhatsApp em um só lugar.</p>
+        <form id="login-form">
+          <label
+            >API key administrativa<input
+              name="apiKey"
+              type="password"
+              autocomplete="off"
+              minlength="32"
+              placeholder="ABC123"
+              required /></label
+          ><button class="primary">Entrar no painel <span>→</span></button>
+        </form>
+        <p id="login-error" role="alert"></p>
+        <small>Acesso protegido</small>
+      </div>
+      <div class="login-art">
+        <span class="art-circle"></span>
+        <p>Uma consulta.<br />Um registro.<br />Todo o histórico.</p>
+        <small>WHATSAPP PROFILE PHOTO API</small>
+      </div>
+    </section>
+    <div id="app" hidden>
+      <aside class="sidebar">
+        <div class="brand"><span class="logo">f.</span> FotoAPI</div>
+        <p class="nav-label">WORKSPACE</p>
+        <nav>
+          <button data-view="overview" class="active">◫ <span>Visão geral</span></button
+          ><button data-view="history">◷ <span>Histórico de fotos</span></button
+          ><button data-view="connections">◎ <span>Conexões WhatsApp</span></button
+          ><button data-view="access">⌘ <span>Controle de acesso</span></button
+          ><button data-view="settings">⚙ <span>Configurações</span></button>
+          <button data-view="documentation">≡ <span>Documentação</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <span class="dot"></span> API de fotos <small>Administração</small
+          ><button id="logout" class="ghost">Sair da conta ↗</button>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div>
+            <p class="eyebrow">PAINEL DE CONTROLE</p>
+            <h1 id="page-title">Visão geral</h1>
+          </div>
+          <div class="header-right">
+            <span class="admin-badge">A</span
+            ><span>Administrador<small>Sessão protegida</small></span>
+          </div>
+        </header>
+        <div id="global-error" role="alert" hidden></div>
+        <section id="view-overview" class="view">
+          <div class="intro">
+            <div>
+              <h2>Todos os números, em perspectiva.</h2>
+              <p class="muted">Acompanhe o uso da API e a disponibilidade do seu acervo.</p>
+            </div>
+            <button id="refresh" class="secondary">↻ Atualizar</button>
+          </div>
+          <div class="filters">
+            <label
+              >API key<select id="filter-key">
+                <option value="">Todas as chaves</option>
+              </select></label
+            ><label
+              >Domínio<select id="filter-domain">
+                <option value="">Todos os domínios</option>
+              </select></label
+            ><span class="muted">Filtros aplicados às métricas e ao histórico.</span>
+          </div>
+          <div id="stats" class="stats"></div>
+          <div class="section-heading">
+            <h2>Consultas recentes</h2>
+            <button data-view="history" class="text-button">Ver histórico completo →</button>
+          </div>
+          <div id="recent" class="panel"></div>
+          <div class="note">
+            <span>↗</span>
+            <div>
+              <strong>Cache que economiza consultas</strong>
+              <p>
+                Durante o prazo configurado, a foto é entregue pelo banco. Cada acesso continua
+                registrado no histórico.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section id="view-history" class="view" hidden>
+          <div class="intro">
+            <div>
+              <h2>Cada consulta tem uma história.</h2>
+              <p class="muted">Fotos arquivadas, URLs de origem e acessos por número.</p>
+            </div>
+          </div>
+          <div class="filters">
+            <label>Número com DDI<input id="history-phone" placeholder="5511999999999" /></label
+            ><button id="history-search" class="secondary">Filtrar número</button
+            ><button id="clear-phone" class="ghost">Limpar</button
+            ><span class="muted">API key e domínio: use os filtros da visão geral.</span>
+          </div>
+          <div id="history-table" class="panel"></div>
+          <div class="pagination">
+            <button id="prev-page" class="secondary">← Anterior</button><span id="page-info"></span
+            ><button id="next-page" class="secondary">Próxima →</button>
+          </div>
+        </section>
+        <section id="view-connections" class="view" hidden>
+          <div class="intro">
+            <div>
+              <h2>Seu pool de conexões.</h2>
+              <p class="muted">
+                Conecte pelo QR code e escolha quais sessões participam da rotação.
+              </p>
+            </div>
+            <button id="sync-connections" class="secondary">↻ Sincronizar</button>
+          </div>
+          <form id="connection-form" class="inline-form panel">
+            <label
+              >Nome da conexão<input
+                name="name"
+                placeholder="WhatsApp principal"
+                maxlength="80"
+                required /></label
+            ><button class="primary">+ Nova conexão</button>
+          </form>
+          <div id="connection-list" class="connection-grid"></div>
+        </section>
+        <section id="view-access" class="view" hidden>
+          <div class="intro">
+            <div>
+              <h2>Decida quem pode consultar.</h2>
+              <p class="muted">
+                Permita origens específicas ou gere uma chave para integrações no servidor.
+              </p>
+            </div>
+          </div>
+          <div class="two-columns">
+            <div class="panel padded">
+              <h2>API keys</h2>
+              <p class="muted">A chave completa aparece somente na criação.</p>
+              <form id="key-form" class="inline-form">
+                <label
+                  >Nome<input
+                    name="name"
+                    placeholder="Integração CRM"
+                    maxlength="80"
+                    required /></label
+                ><button class="primary">Criar chave</button>
+              </form>
+              <div id="key-list"></div>
+            </div>
+            <div class="panel padded">
+              <h2>Domínios aprovados</h2>
+              <p class="muted">Use a origem exata: protocolo, domínio e porta.</p>
+              <form id="domain-form" class="inline-form">
+                <label
+                  >Origem<input
+                    name="origin"
+                    placeholder="https://meusite.com"
+                    type="url"
+                    required /></label
+                ><button class="primary">Aprovar</button>
+              </form>
+              <div id="domain-list"></div>
+              <p class="small-note">
+                Origin pode ser imitado por clientes fora do navegador. Para integrações privadas,
+                use API key no servidor.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section id="view-settings" class="view" hidden>
+          <div class="intro">
+            <div>
+              <h2>Controle o tempo de validade.</h2>
+              <p class="muted">Escolha por quanto tempo uma foto pode ser reutilizada.</p>
+            </div>
+          </div>
+          <div class="settings-panel panel padded">
+            <h2>Validade do cache</h2>
+            <p class="muted">
+              O prazo é contado desde o salvamento da foto. Alterações também se aplicam às fotos
+              existentes.
+            </p>
+            <form id="settings-form">
+              <div class="duration-fields">
+                <label
+                  >Tempo<input id="cache-ttl" name="ttl" type="number" min="0" step="any" required
+                /></label>
+                <label
+                  >Unidade<select id="cache-ttl-unit" name="unit">
+                    <option value="months">Meses</option>
+                    <option value="days">Dias</option>
+                    <option value="hours" selected>Horas</option>
+                    <option value="minutes">Minutos</option>
+                    <option value="seconds">Segundos</option>
+                  </select></label
+                >
+              </div>
+              <p id="ttl-description" class="small-note"></p>
+              <p class="small-note">
+                Use 0 para desativar o cache. Um mês equivale a 30 dias. Prazo máximo: 10 anos.
+              </p>
+              <button id="save-settings" class="primary">Salvar configuração</button>
+            </form>
+          </div>
+        </section>
+        <section id="view-documentation" class="view" hidden>
+          <div class="intro">
+            <div>
+              <h2>Integre com a FotoAPI.</h2>
+              <p class="muted">
+                Consulta de fotos por POST ou GET, com exemplos de autenticação e resposta.
+              </p>
+            </div>
+            <a class="primary download-link" href="/api/admin/integration-guide"
+              >Baixar guia para IA (.md) ↓</a
+            >
+          </div>
+          <div class="panel padded docs-auth">
+            <h2>Autenticação das consultas</h2>
+            <p>
+              <strong>POST /api/photos:</strong> envie a chave no header
+              <code>X-Api-Key: SUA_API_KEY</code> e o número no body JSON.
+            </p>
+            <p>
+              <strong>GET /api/photos/:phone:</strong> envie a chave na query string
+              <code>?apikey=123</code>, substituindo 123 pela sua chave. Não envie body.
+            </p>
+          </div>
+          <div class="filters docs-filters">
+            <label>Buscar rota<input id="docs-search" placeholder="Ex.: POST ou GET" /></label>
+          </div>
+          <div id="api-documentation"></div>
+          <div class="panel padded docs-errors">
+            <h2>Erros e limites</h2>
+            <p>
+              400: entrada inválida · 401: autorização ausente/inválida · 403: domínio recusado ·
+              404: recurso/foto não encontrado · 409: conflito/consulta em andamento · 429: rate
+              limit · 502: erro da WUZAPI · 503: nenhuma sessão elegível · 504: timeout.
+            </p>
+            <pre>{ "error": "Descrição do problema" }</pre>
+            <p class="small-note">
+              Em HTTP 429, respeite Retry-After. Os limites são configurados no .env. X-Request-Id
+              permite correlacionar logs. A documentação descreve a FotoAPI; a sua plataforma não
+              precisa chamar a WUZAPI diretamente.
+            </p>
+          </div>
+        </section>
+        <footer>
+          FotoAPI <span>Arquivo persistente · Histórico de consultas · Rotação de sessões</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="qr-dialog">
+      <div class="dialog-heading">
+        <h2>Conectar WhatsApp</h2>
+        <button id="close-qr" class="ghost" aria-label="Fechar">✕</button>
+      </div>
+      <p class="muted">No WhatsApp, abra Aparelhos conectados → Conectar aparelho.</p>
+      <div id="qr-content"></div>
+      <p id="qr-status" class="small-note" role="status"></p>
+    </dialog>
+    <dialog id="key-dialog">
+      <div class="dialog-heading">
+        <h2>Chave criada</h2>
+        <button id="close-key" class="ghost" aria-label="Fechar">✕</button>
+      </div>
+      <p>Copie e guarde esta chave. Ela não será exibida novamente.</p>
+      <input id="new-key" readonly aria-label="Nova API key" /><button
+        id="copy-key"
+        class="primary"
+      >
+        Copiar chave
+      </button>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>
