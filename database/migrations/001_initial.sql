@@ -32,8 +32,3 @@ CREATE TABLE IF NOT EXISTS sessions (
   digest CHAR(64) PRIMARY KEY, csrf CHAR(48) NOT NULL, admin_key_digest CHAR(64) NOT NULL,
   expires_at BIGINT NOT NULL, INDEX session_expiry (expires_at)
 ) ENGINE=InnoDB;
--- Negative cache contains only confirmed missing avatars, never transient upstream failures.
-CREATE TABLE IF NOT EXISTS missing_photos (
-  phone VARCHAR(15) PRIMARY KEY, saved_at BIGINT NOT NULL,
-  invalidated BOOLEAN NOT NULL DEFAULT FALSE, INDEX missing_photos_date (saved_at)
-) ENGINE=InnoDB;

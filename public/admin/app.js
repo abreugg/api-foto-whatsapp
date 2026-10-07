@@ -149,7 +149,7 @@ async function loadConnections() {
     ? connections
         .map(
           (c) =>
-            `<article class="panel connection-card"><h3>${escape(c.name)}</h3><p>${escape(c.jid?.split('@')[0].split(':')[0] || 'Número ainda não vinculado')}</p><span class="pill ${c.connected && c.logged_in ? '' : 'gray'}">${c.connected && c.logged_in ? 'Conectado' : c.connected ? 'Aguardando autenticação' : 'Desconectado'}</span><div class="rotation"><span>Participa da rotação</span><button class="toggle ${c.rotation ? 'on' : ''}" data-rotation="${escape(c.id)}" data-enabled="${!c.rotation}" aria-label="Rotação de ${escape(c.name)}" aria-pressed="${Boolean(c.rotation)}"></button></div><div class="connection-actions"><button class="secondary" data-connect="${escape(c.id)}">Conectar / QR code</button><button class="ghost" data-status="${escape(c.id)}">Ver status</button><button class="ghost" data-disconnect="${escape(c.id)}">Desconectar</button></div><p class="small-note">${c.rotation ? 'Apenas sessões conectadas entram nas consultas.' : 'Ative a rotação para usar esta conexão nas consultas.'}</p></article>`,
+            `<article class="panel connection-card"><h3>${escape(c.name)}</h3><p>${escape(c.jid?.split('@')[0].split(':')[0] || 'Número ainda não vinculado')}</p><span class="pill ${c.connected && c.logged_in ? '' : 'gray'}">${c.connected && c.logged_in ? 'Conectado' : c.connected ? 'Aguardando autenticação' : 'Desconectado'}</span><div class="rotation"><span>Participa da rotação</span><button class="toggle ${c.rotation ? 'on' : ''}" data-rotation="${escape(c.id)}" data-enabled="${!c.rotation}" aria-label="Rotação de ${escape(c.name)}" aria-pressed="${Boolean(c.rotation)}"></button></div><div class="connection-actions"><button class="secondary" data-connect="${escape(c.id)}">Conectar / QR code</button><button class="ghost" data-status="${escape(c.id)}">Ver status</button><button class="ghost" data-disconnect="${escape(c.id)}">Desconectar</button><button class="ghost danger" data-delete-connection="${escape(c.id)}" data-name="${escape(c.name)}">Excluir conexão</button></div><p class="small-note">${c.rotation ? 'Apenas sessões conectadas entram nas consultas.' : 'Ative a rotação para usar esta conexão nas consultas.'}</p></article>`,
         )
         .join('')
     : '<div class="panel empty">Crie sua primeira conexão e escaneie o QR code.</div>';
@@ -359,6 +359,25 @@ document.addEventListener(
     if (el.dataset.disconnect) {
       await api('connections/' + el.dataset.disconnect + '/disconnect', 'POST');
       await loadConnections();
+    }
+    if (el.dataset.deleteConnection) {
+      if (
+        !confirm(
+          'Excluir a conexão "' +
+            el.dataset.name +
+            '"? Ela será desconectada e removida da API WhatsApp. Para usá-la novamente, será necessário criar outra conexão. As fotos e o histórico salvos serão preservados.',
+        )
+      )
+        return;
+      el.disabled = true;
+      try {
+        await api('connections/' + encodeURIComponent(el.dataset.deleteConnection), 'DELETE');
+        closeQR();
+        await loadConnections();
+        toast('Conexão excluída. Fotos e histórico preservados.');
+      } finally {
+        el.disabled = false;
+      }
     }
     if (el.dataset.invalidate) {
       el.disabled = true;

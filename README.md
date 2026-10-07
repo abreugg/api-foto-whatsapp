@@ -105,3 +105,11 @@ Integração implementada conforme `spec.yml` fornecido: `/admin/users`, `/user/
 ## Cache de resultados não encontrados
 
 Resultados sem foto também são guardados no MySQL com o mesmo TTL das fotos. Enquanto válidos, retornam HTTP 404 com `cacheHit: true`, sem consultar novamente a WUZAPI. Cada acesso gera histórico. TTL zero desativa ambos os caches; **Excluir do cache** também funciona para resultados não encontrados. As métricas de cache válido incluem os dois tipos, enquanto fotos arquivadas contam apenas imagens. Falhas temporárias não entram nesse cache. A tabela `missing_photos` é criada automaticamente ao iniciar a API, inclusive em bancos existentes; não apague o volume MySQL.
+
+## Excluir conexão WhatsApp
+
+Na aba Conexões WhatsApp, **Excluir conexão** pede confirmação, desconecta a sessão ativa e remove seu cadastro remoto. A rota administrativa é `DELETE /api/admin/connections/:id`, sem body, protegida pela autenticação e pelos limites administrativos. Fotos e histórico permanecem no MySQL. O identificador local é mantido para os vínculos históricos, com token apagado, fora da lista e da rotação. Uma tabela de exclusões impede que sincronizações antigas restaurem a conexão. Ela é criada automaticamente na inicialização. A documentação de integração continua limitada às duas rotas de consulta.
+
+## Atualizar uma VPS existente
+
+Siga [docs/UPDATE_VPS.md](docs/UPDATE_VPS.md). As migrations são versionadas e aplicadas automaticamente antes de a API aceitar requisições. Também existem `npm run migrate` e `npm run migrate:status`. A atualização mantém fotos, histórico, configurações e credenciais existentes.

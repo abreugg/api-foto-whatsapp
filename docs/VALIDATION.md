@@ -1,6 +1,6 @@
 # Validação desta entrega
 
-- `npm test`: 45 testes passaram. Além dos fluxos de autorização, cache, logs e QR, verificam conversão e limites das unidades de duração, download autenticado do guia e documentação limitada às duas consultas. O GET aceita apikey na query; chaves inválidas, duplicadas ou desativadas são recusadas, e o POST não aceita chave na query. Avatar aceita tanto url da API real quanto URL documentado no YAML.
+- `npm test`: 55 testes passaram. Além dos fluxos de autorização, cache, logs e QR, verificam conversão e limites das unidades de duração, download autenticado do guia e documentação limitada às duas consultas. O GET aceita apikey na query; chaves inválidas, duplicadas ou desativadas são recusadas, e o POST não aceita chave na query. Avatar aceita tanto url da API real quanto URL documentado no YAML. Exclusão de conexão verifica remoção remota, preservação de fotos/histórico, falha remota sem remoção local e prevenção de reaparecimento por sincronização antiga.
 - `npm run check`: sintaxe validada nos arquivos JavaScript.
 - `npm run format:check`: formatação conferida com Prettier.
 - `npm audit --omit=dev`: nenhuma vulnerabilidade reportada nas dependências de produção no momento da entrega.
@@ -17,3 +17,7 @@ Atualização: consulta real de avatar retornou HTTP 200 com data.url. O adaptad
 O `.env` local tem chaves administrativas, segredo de criptografia e senhas de banco gerados aleatoriamente. O ZIP distribui apenas `.env.example`, sem credenciais. Para a pasta do projeto existente, preencha `WUZAPI_URL` e `WUZAPI_ADMIN_TOKEN` antes de iniciar.
 
 Cache de não encontrado: testes cobrem reutilização, TTL, desativação, exclusão, métricas, histórico por consulta, concorrência e ausência de cache para erros temporários. O teste MySQL separado cobre persistência desse resultado entre instâncias de repositório; ainda não foi executado neste ambiente.
+
+O teste MySQL separado também verifica exclusão de conexão com foto vinculada, preservação do BLOB e impossibilidade de restaurar credenciais pela sincronização. Nenhuma conexão real foi excluída durante a validação; a exclusão remota foi simulada.
+
+Migrations: testes verificam ordem, execução apenas de pendências, falha sem registro de sucesso, liberação do lock, bloqueio de arquivo já aplicado alterado e status sem execução de DDL pendente. Migrations SQL foram separadas em 001 inicial, 002 cache negativo e 003 exclusão de conexões. Execução em MySQL real/VPS continua pendente neste ambiente.

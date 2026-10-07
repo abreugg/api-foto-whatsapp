@@ -945,3 +945,10 @@ dialog::backdrop {
     gap: 10px;
   }
 }
+
+button.danger {
+  color: #b42318;
+}
+button.danger:hover {
+  background: #fff1ee;
+}

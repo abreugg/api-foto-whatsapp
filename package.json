@@ -16,7 +16,9 @@
     "docs:generate": "node scripts/generate-integration-docs.js",
     "diagnose:wuzapi": "node scripts/diagnose-wuzapi.js",
     "format": "prettier --write src public test scripts package.json compose.yml README.md",
-    "format:check": "prettier --check src public test scripts package.json compose.yml README.md"
+    "format:check": "prettier --check src public test scripts package.json compose.yml README.md",
+    "migrate": "node scripts/migrate.js",
+    "migrate:status": "node scripts/migrate.js --status"
   },
   "dependencies": {
     "express": "^5.1.0",

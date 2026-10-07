@@ -6,6 +6,7 @@ export function memoryRepository(initialTtl = 3600) {
     domains: [],
     sessions: [],
     connections: [],
+    deletedConnections: [],
     photos: [],
     missing: [],
     requests: [],
@@ -75,6 +76,7 @@ export function memoryRepository(initialTtl = 3600) {
         c.logged_in = 0;
       });
       for (const user of users) {
+        if (state.deletedConnections.includes(user.id)) continue;
         const old = state.connections.find((c) => c.id === user.id);
         const value = {
           ...user,
@@ -88,14 +90,26 @@ export function memoryRepository(initialTtl = 3600) {
       }
     },
     async listConnections() {
-      return state.connections.map(({ token, ...c }) => c);
+      return state.connections
+        .filter((c) => !state.deletedConnections.includes(c.id))
+        .map(({ token, ...c }) => c);
     },
     async findConnection(id) {
-      return state.connections.find((c) => c.id === id);
+      return state.connections.find((c) => c.id === id && !state.deletedConnections.includes(id));
+    },
+    async deleteConnection(id) {
+      state.deletedConnections.push(id);
+      Object.assign(
+        state.connections.find((c) => c.id === id),
+        { token: '', connected: 0, logged_in: 0, rotation: 0 },
+      );
     },
     async rotationCandidates() {
       return state.connections
-        .filter((c) => c.rotation && c.connected && c.logged_in)
+        .filter(
+          (c) =>
+            c.rotation && c.connected && c.logged_in && !state.deletedConnections.includes(c.id),
+        )
         .sort((a, b) => a.last_used - b.last_used || a.id.localeCompare(b.id))
         .map((c) => ({ ...c }));
     },

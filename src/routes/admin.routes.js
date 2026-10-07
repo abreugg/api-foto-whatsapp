@@ -131,6 +131,9 @@ export function adminRoutes({ repo, config, auth, limits, connections, photos })
   router.post('/connections/:id/disconnect', async (req, res) =>
     res.json(await connections.disconnect(req.params.id)),
   );
+  router.delete('/connections/:id', async (req, res) =>
+    res.json(await connections.remove(req.params.id)),
+  );
   router.get('/connections/:id/status', async (req, res) =>
     res.json(await connections.status(req.params.id)),
   );

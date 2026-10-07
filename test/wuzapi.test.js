@@ -100,3 +100,16 @@ test('valid WUZAPI JSON is returned and the admin header follows the YAML', asyn
   });
   assert.deepEqual(await service.listUsers(), []);
 });
+
+test('remote connection deletion uses the admin token and accepts an already absent user', async () => {
+  for (const status of [200, 404]) {
+    const service = createWuzapiService(config, async (url, options) => {
+      assert.equal(url, 'https://wuzapi.test/admin/users/session');
+      assert.equal(options.method, 'DELETE');
+      assert.equal(options.headers.Authorization, 'secret-admin');
+      assert.equal(options.headers.token, undefined);
+      return Response.json({ success: status === 200, data: { id: 'session' } }, { status });
+    });
+    assert.ok(await service.deleteUser('session'));
+  }
+});

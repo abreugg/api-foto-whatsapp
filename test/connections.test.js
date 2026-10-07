@@ -90,3 +90,24 @@ test('waiting session still receives its QR and safe status flags', async () => 
     LoggedIn: false,
   });
 });
+
+test('deleted connections cannot reappear from an old synchronization result', async () => {
+  const calls = [];
+  const { service, repo } = await fixture({
+    disconnect: async (token) => {
+      assert.equal(token, 'private-token');
+      calls.push('disconnect');
+    },
+    deleteUser: async (id) => {
+      assert.equal(id, 'session');
+      calls.push('delete');
+    },
+  });
+  await service.setRotation('session', true);
+  assert.deepEqual(await service.remove('session'), { deleted: true, historyPreserved: true });
+  assert.deepEqual(calls, ['disconnect', 'delete']);
+  assert.deepEqual(await service.sync(), []);
+  assert.equal(await repo.findConnection('session'), undefined);
+  assert.equal(repo.state.connections[0].token, '');
+  await assert.rejects(service.connect('session'), (e) => e.status === 404);
+});

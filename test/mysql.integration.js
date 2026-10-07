@@ -20,6 +20,7 @@ test('MySQL persists the photo BLOB, filters history and invalidates without del
       await pool.execute('DELETE FROM requests WHERE api_key_id=?', [keyId]);
       await pool.execute('DELETE FROM photos WHERE id=?', [id]);
       await pool.execute('DELETE FROM api_keys WHERE id=?', [keyId]);
+      await pool.execute('DELETE FROM deleted_connections WHERE id=?', [connectionId]);
       await pool.execute('DELETE FROM connections WHERE id=?', [connectionId]);
     } finally {
       await pool.end();
@@ -81,6 +82,24 @@ test('MySQL persists the photo BLOB, filters history and invalidates without del
   assert.equal((await repo.stats({ apiKeyId: keyId }, 3600)).validCache, 0);
   assert.deepEqual((await repo.findImage(id)).image, bytes);
   assert.equal((await repo.history({ apiKeyId: keyId, page: 1 })).total, 2);
+  await repo.deleteConnection(connectionId);
+  assert.equal(await repo.findConnection(connectionId), null);
+  assert.deepEqual((await repo.findImage(id)).image, bytes);
+  assert.equal((await repo.history({ apiKeyId: keyId, page: 1 })).total, 2);
+  await repo.saveConnections([
+    {
+      id: connectionId,
+      name: 'Stale remote',
+      token: 'must-not-return',
+      jid: null,
+      connected: 1,
+      loggedIn: 1,
+      syncedAt: Date.now(),
+    },
+  ]);
+  assert.equal(await repo.findConnection(connectionId), null);
+  const [rows] = await pool.execute('SELECT token FROM connections WHERE id=?', [connectionId]);
+  assert.equal(rows[0].token, '');
 });
 
 test('MySQL persists missing-photo cache across repositories, counts and invalidates it', async (t) => {

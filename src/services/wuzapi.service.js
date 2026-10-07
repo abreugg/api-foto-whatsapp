@@ -93,6 +93,8 @@ export function createWuzapiService(config, fetcher = fetch, logger = createLogg
       throw new HttpError(502, 'A WUZAPI retornou um JSON em formato inválido.');
     if (route === '/user/avatar' && response.status === 404)
       throw new HttpError(404, 'Foto indisponível para este número.');
+    if (method === 'DELETE' && /^\/admin\/users\/[^/]+$/.test(route) && response.status === 404)
+      return { alreadyDeleted: true };
     if (!response.ok || payload.success === false)
       throw new HttpError(
         502,
@@ -111,6 +113,8 @@ export function createWuzapiService(config, fetcher = fetch, logger = createLogg
     listUsers: () => request('/admin/users', { admin: true }),
     createUser: (name, token) =>
       request('/admin/users', { method: 'POST', admin: true, body: { name, token, events: '' } }),
+    deleteUser: (id) =>
+      request('/admin/users/' + encodeURIComponent(id), { method: 'DELETE', admin: true }),
     async avatar(token, phone) {
       let data;
       try {

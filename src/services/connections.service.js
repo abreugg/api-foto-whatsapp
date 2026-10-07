@@ -81,6 +81,20 @@ export function createConnectionsService(repo, wuzapi, config, logger = createLo
       logger.info('connections.disconnected', { connectionId: id });
       return result;
     },
+    async remove(id) {
+      // Finish any earlier synchronization before erasing the remote account.
+      if (syncing) await syncing;
+      const c = await find(id);
+      if (c.connected) {
+        await wuzapi.disconnect(cipher.decrypt(c.token));
+        await repo.setStatus(id, false, false);
+      }
+      // Do not hide the account locally if the remote deletion failed.
+      await wuzapi.deleteUser(id);
+      await repo.deleteConnection(id);
+      logger.info('connections.deleted', { connectionId: id });
+      return { deleted: true, historyPreserved: true };
+    },
     async status(id) {
       const c = await find(id);
       return readStatus(c);

@@ -48,6 +48,13 @@ async function fixture(t, overrides = {}) {
       users.push(user);
       return Response.json({ success: true, data: user }, { status: 201 });
     }
+    if (url.startsWith('http://wuzapi.test/admin/users/') && options.method === 'DELETE') {
+      if (overrides.deleteFailure) return Response.json({ success: false }, { status: 500 });
+      const id = decodeURIComponent(url.split('/').pop());
+      const index = users.findIndex((u) => u.id === id);
+      if (index >= 0) users.splice(index, 1);
+      return Response.json({ success: true, data: { id } });
+    }
     if (url === 'http://wuzapi.test/user/avatar' && overrides.avatarResponse)
       return overrides.avatarResponse();
     if (url === 'http://wuzapi.test/user/avatar')
@@ -476,6 +483,61 @@ test('concurrent missing avatar lookups share upstream work and keep separate hi
   assert.equal(results.filter((r) => r.body.cacheHit).length, 1);
   assert.equal(f.calls.filter((c) => c.url.endsWith('/user/avatar')).length, 1);
   assert.equal(f.repo.state.requests.length, 2);
+});
+
+test('deleting a connection removes it remotely and from rotation while retaining archived photos and history', async (t) => {
+  const f = await fixture(t);
+  const k = await f.key();
+  await f.ready();
+  const lookup = '/api/photos/' + phone + '?apikey=' + k.key;
+  const photo = await f.request(lookup);
+  assert.equal(photo.status, 200);
+  assert.equal((await f.request('/api/admin/connections/a', { method: 'DELETE' })).status, 401);
+  const removed = await f.admin('connections/a', { method: 'DELETE' });
+  assert.deepEqual(removed.body, { deleted: true, historyPreserved: true });
+  assert.equal(
+    f.users.some((u) => u.id === 'a'),
+    false,
+  );
+  assert.equal(
+    (await f.admin('connections')).body.some((c) => c.id === 'a'),
+    false,
+  );
+  assert.equal(
+    (await f.repo.rotationCandidates()).some((c) => c.id === 'a'),
+    false,
+  );
+  assert.equal((await f.admin('connections/a/status')).status, 404);
+  assert.equal(f.repo.state.connections.find((c) => c.id === 'a').token, '');
+  assert.equal((await f.request(lookup)).body.cacheHit, true);
+  assert.equal(
+    (
+      await f.request('/api/photos/' + photo.body.id + '/image', {
+        headers: { 'X-Api-Key': k.key },
+      })
+    ).status,
+    200,
+  );
+  assert.equal(f.repo.state.requests.length, 2);
+  const operations = f.calls.filter(
+    (c) => c.url.endsWith('/session/disconnect') || c.method === 'DELETE',
+  );
+  assert.deepEqual(
+    operations.map((c) => c.method),
+    ['POST', 'DELETE'],
+  );
+});
+
+test('failed remote deletion keeps the connection visible and preserves local credentials', async (t) => {
+  const f = await fixture(t, { deleteFailure: true });
+  await f.ready();
+  assert.equal((await f.admin('connections/a', { method: 'DELETE' })).status, 502);
+  assert.equal(f.repo.state.deletedConnections.length, 0);
+  assert.ok((await f.repo.findConnection('a')).token);
+  assert.equal(
+    (await f.repo.listConnections()).some((c) => c.id === 'a'),
+    true,
+  );
 });
 
 test('GET lookup accepts apikey query while POST requires header credentials', async (t) => {

@@ -69,8 +69,8 @@ export function createRepository(pool) {
         await connection.execute('UPDATE connections SET connected=0,logged_in=0');
         for (const u of users)
           await connection.execute(
-            `INSERT INTO connections(id,name,token,jid,connected,logged_in,synced_at) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name),token=VALUES(token),jid=VALUES(jid),connected=VALUES(connected),logged_in=VALUES(logged_in),synced_at=VALUES(synced_at)`,
-            [u.id, u.name, u.token, u.jid, u.connected, u.loggedIn, u.syncedAt],
+            `INSERT INTO connections(id,name,token,jid,connected,logged_in,synced_at) SELECT ?,?,?,?,?,?,? FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM deleted_connections WHERE id=?) ON DUPLICATE KEY UPDATE name=VALUES(name),token=VALUES(token),jid=VALUES(jid),connected=VALUES(connected),logged_in=VALUES(logged_in),synced_at=VALUES(synced_at)`,
+            [u.id, u.name, u.token, u.jid, u.connected, u.loggedIn, u.syncedAt, u.id],
           );
         await connection.commit();
       } catch (e) {
@@ -82,12 +82,36 @@ export function createRepository(pool) {
     },
     listConnections: () =>
       all(
-        'SELECT id,name,jid,connected,logged_in,rotation,last_used,synced_at FROM connections ORDER BY name',
+        'SELECT id,name,jid,connected,logged_in,rotation,last_used,synced_at FROM connections c WHERE NOT EXISTS (SELECT 1 FROM deleted_connections d WHERE d.id=c.id) ORDER BY name',
       ),
-    findConnection: (id) => one('SELECT * FROM connections WHERE id=?', [id]),
+    findConnection: (id) =>
+      one(
+        'SELECT * FROM connections c WHERE id=? AND NOT EXISTS (SELECT 1 FROM deleted_connections d WHERE d.id=c.id)',
+        [id],
+      ),
+    async deleteConnection(id) {
+      const connection = await pool.getConnection();
+      try {
+        await connection.beginTransaction();
+        await connection.execute(
+          'INSERT IGNORE INTO deleted_connections(id,deleted_at) VALUES (?,?)',
+          [id, Date.now()],
+        );
+        await connection.execute(
+          "UPDATE connections SET token='',connected=0,logged_in=0,rotation=0 WHERE id=?",
+          [id],
+        );
+        await connection.commit();
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    },
     rotationCandidates: () =>
       all(
-        'SELECT * FROM connections WHERE rotation=1 AND connected=1 AND logged_in=1 ORDER BY last_used,id',
+        'SELECT * FROM connections c WHERE rotation=1 AND connected=1 AND logged_in=1 AND NOT EXISTS (SELECT 1 FROM deleted_connections d WHERE d.id=c.id) ORDER BY last_used,id',
       ),
     markUsed: (id, time) => all('UPDATE connections SET last_used=? WHERE id=?', [time, id]),
     setRotation: (id, value) => all('UPDATE connections SET rotation=? WHERE id=?', [value, id]),
